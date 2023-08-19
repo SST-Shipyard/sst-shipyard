@@ -11,7 +11,8 @@
    [com.fulcrologic.fulcro.dom :as fulcro.dom]
    [com.fulcrologic.fulcro.mutations :refer [defmutation set-value! toggle!]]
    [com.fulcrologic.fulcro.react.version18 :refer [with-react18]]
-   [oops.core :refer [oget]]
+   [goog.uri.utils :as guri]
+   [oops.core :refer [oget oset!]]
    ["@mui/icons-material/CheckCircleRounded" :default CheckCircleRounded]
    ["@mui/icons-material/Delete" :default Delete]
    ["@mui/icons-material/Explore" :default Explore]
@@ -191,7 +192,7 @@
          (ui-part-card part)
          (delete-me-button this)))
 
-(def ui-part (fulcro.comp/factory Part))
+(def ui-part (fulcro.comp/factory Part {:keyfn :part/id}))
 
 (defmutation open-part-selector [_params]
   (action [{:keys [state ref]}]
@@ -200,17 +201,6 @@
 (defmutation close-part-selector [_params]
   (action [{:keys [state]}]
           (swap! state #(assoc-in % [:component/id ::PartSelector :open-ship] nil))))
-
-(defmutation add-part [{:keys [part]}]
-  (action [{:keys [state]}]
-          (let [max-id (->> @state
-                            :part/id
-                            keys
-                            (reduce max 0) ; (apply max) would explode with an empty list
-                            )]
-            (swap! state #(fulcro.merge/merge-component % Part {:part/id (inc max-id) :part part}
-                                                        :append (conj (get-in @state [:component/id ::PartSelector :open-ship]) :parts)))))
-  )
 
 ;; Design notes
 ;; The properties of the ship, like evasion, hull, missiles, available power etc need to be on the abstract ship,
@@ -234,6 +224,76 @@
          )))
 (def ui-ship (fulcro.comp/factory Ship {:keyfn :ship/id}))
 
+(defn positions
+  [pred coll]
+  (keep-indexed (fn [idx x]
+                  (when (pred x)
+                    idx))
+                coll))
+
+(defn ship->code [ship]
+  (let [chassis-index (first (positions #{(:chassis ship)} cards/chassis))
+        part-indices (map #(first (positions #{(:part %)} cards/parts)) (:parts ship))]
+    (string/join "-"
+                 (apply conj [chassis-index] part-indices))))
+
+(defn ships->codes [ships]
+  (map ship->code ships))
+
+(defn code->ship [code]
+  (let [[ship-code & part-codes] (map js/parseInt (string/split code #"-"))]
+    {:chassis (nth cards/chassis ship-code)
+     :parts (map #(nth cards/parts %) part-codes)}))
+
+(defn codes->url-params [codes]
+  (if (empty? codes)
+    ""
+    (string/join "," codes)))
+
+(defn denormalize-ship [state ship]
+  (com.fulcrologic.fulcro.algorithms.denormalize/db->tree (get-query Ship)
+                                                          ship
+                                                          state))
+
+(defn denormalize-ships [state]
+  (map #(denormalize-ship state %) (:ships state)))
+
+(defn get-current-ships []
+  (denormalize-ships @(::fulcro.app/state-atom app)))
+
+(defn get-current-url []
+  (.. js/document -location -search))
+
+(defn update-ship-url-params! [state]
+  (.. js/window -history (replaceState nil ""
+                                       (->> state
+                                            (denormalize-ships)
+                                            (ships->codes)
+                                            (codes->url-params)
+                                            (guri/setParam (get-current-url) "ships")))))
+
+(defmutation add-part [{:keys [ship part]}]
+  (action
+   [{:keys [state]}]
+   (swap! state
+          (fn [state]
+            (let [max-id (->> state
+                              :part/id
+                              keys
+                              (reduce max 0) ; (apply max) would explode with an empty list
+                              )
+                  ship (or ship
+                           [:ship/id
+                            (->> state
+                                 :ship/id
+                                 keys
+                                 (reduce max 0) ; (apply max) would explode with an empty list
+                                 )])
+                  new-state (fulcro.merge/merge-component state Part {:part/id (inc max-id) :part part}
+                                                          :append (conj ship :parts))]
+              (update-ship-url-params! new-state)
+              new-state)))))
+
 (defsc PartSelector [this {:keys [selected-faction open-ship]}]
   {:ident (fn [] [:component/id ::PartSelector])
    :query [[:selected-faction '_]
@@ -246,7 +306,7 @@
                      (mapv #(sheet {:key (str (:faction %) (:name %))
                                     :sx {:m 1}
                                     :onClick (fn []
-                                               (transact! app [(add-part {:part %})
+                                               (transact! app [(add-part {:part % :ship (fulcro.comp/get-ident Ship open-ship)})
                                                                (close-part-selector)]))}
                                    (ui-part-card %))))))
 
@@ -259,8 +319,15 @@
                            keys
                            (reduce max 0) ; (apply max) would explode with an empty list
                            )]
-            (swap! state #(fulcro.merge/merge-component % Ship {:ship/id (inc max-id) :chassis chassis}
-                                                        :append [:ships])))))
+            (swap! state (fn [state]
+                           (let [new-state (fulcro.merge/merge-component state Ship {:ship/id (inc max-id) :chassis chassis}
+                                                                         :append [:ships])]
+                             (update-ship-url-params! new-state)
+                             new-state))))))
+
+(defmutation open-chassis-selector [_params]
+  (action [{:keys [state]}]
+          (swap! state #(assoc % :chassis-selector-open true))))
 
 (defmutation close-chassis-selector [_params]
   (action [{:keys [state]}]
@@ -273,7 +340,7 @@
    :initial-state {:selected-faction {}
                    :chassis-selector-open false}}
   (ui-our-modal (fulcro.comp/computed {:open? (boolean chassis-selector-open)} ; Joy modal doesn't like nulls
-                                      {:callback #(toggle! app :chassis-selector-open)} ; TODO Why needs app, and this doesn't work?
+                                      {:callback #(transact! this [(close-chassis-selector)])}
                  )
                 (->> cards/chassis
                      (filter #(= selected-faction (:faction %)))
@@ -304,15 +371,30 @@
        (ui-part-selector part-selector-data)
        (mapv ui-ship ships)
        (button {:variant :outlined
-                :onClick #(toggle! app :chassis-selector-open)}
+                :onClick #(transact! this [(open-chassis-selector)])}
                "Add ship")
        )
   )
+
+(defn url->ships [url]
+  (map code->ship (-> url
+                      (guri/getParamValue "ships")
+                      (string/split #","))))
+
+(defn init-ships-from-current-url! []
+  (let [ships (url->ships (get-current-url))]
+    (when (not (empty? ships))
+      (transact! app [(select-faction {:selected-faction (-> ships first :chassis :faction)})]))
+    (doseq [ship ships]
+      (transact! app [(add-ship (select-keys ship [:chassis]))])
+      (doseq [part (:parts ship)]
+        (transact! app [(add-part {:part part})])))))
 
 (defn ^:export init
   "Shadow-cljs sets this up to be our entry-point function. See shadow-cljs.edn `:init-fn` in the modules of the main build."
   []
   (fulcro.app/mount! app Root "app")
+  (init-ships-from-current-url!)
   (js/console.log "Loaded"))
 
 (defn ^:export refresh
@@ -325,7 +407,6 @@
   (js/console.log "Hot reload"))
 
 ; TODO Sharing by URL
-;      - store selections in URL
 ;      - output link
 ;      - qrcode for easy transfer to mobile
 ;      - Also some way to add to current squad, not just replace
@@ -338,3 +419,16 @@
 ;      - missile counters
 ;      - save state in URL or some other durable state to avoid losing all when tab is pushed out of ram? Needs to work with multiple tabs running different games
 ; TODO Streamer mode
+
+; Changelog
+; =========
+;
+; Unreleased
+; ----------
+; 2023-08-19
+; ----------
+; URL now updates with the build, and can be used to share builds.
+;
+; 2023-08-18
+; ----------
+; Adding and removing ships and parts
