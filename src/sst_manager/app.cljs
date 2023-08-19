@@ -33,6 +33,7 @@
    ["@mui/joy/Stack" :default Stack]
    ["@mui/joy/Sheet" :default Sheet]
    ["@mui/joy/Switch" :default Switch]
+   ["@mui/joy/ToggleButtonGroup" :default ToggleButtonGroup]
    ["@mui/joy/Typography" :default Typography]
    ))
 
@@ -57,6 +58,7 @@
 (def stack (interop/react-factory Stack))
 (def sheet (interop/react-factory Sheet))
 (def switch (interop/react-factory Switch))
+(def toggle-button-group (interop/react-factory ToggleButtonGroup))
 (def typography (interop/react-factory Typography))
 
 (defonce app (with-react18 (fulcro.app/fulcro-app)))
@@ -319,15 +321,26 @@
                (fulcro.merge/merge-component state Part {:part/id (inc max-id) :part part}
                                              :append (conj ship :parts))))))))
 
-(defsc PartSelector [this {:keys [selected-faction open-ship]}]
+(defsc PartSelector [this {:keys [selected-faction open-ship selected-slot]}]
   {:ident (fn [] [:component/id ::PartSelector])
    :query [[:selected-faction '_]
+           :selected-slot
            {:open-ship (get-query Ship)}]
-   :initial-state {:open-ship {}}}
+   :initial-state {:open-ship {}
+                   :selected-slot nil}}
   (ui-our-modal (fulcro.comp/computed {:open? (boolean open-ship)} ; Joy modal doesn't like nulls
                                       {:callback #(transact! this [(close-part-selector)])})
+                (toggle-button-group {:variant :outlined
+                                      :value selected-slot
+                                      :onChange (fn [event new-value] (set-value! this :selected-slot new-value))}
+                                     (->> ["cockpit" "thruster" "wing" "systems"]
+                                          (mapv #(button {:key %
+                                                          :value %}
+                                                         (string/capitalize (name %))))))
                 (->> cards/parts
-                     (filter #(= selected-faction (:faction %)))
+                     (filter #(and (= selected-faction (:faction %))
+                                   (or (not selected-slot)
+                                       (#{(keyword selected-slot)} (:slot %)))))
                      (mapv #(sheet {:key (str (:faction %) (:name %))
                                     :sx {:m 1}
                                     :onClick (fn []
@@ -482,6 +495,7 @@
 ; ----------
 ; Importing single ships with code
 ; Duplicating ships
+; Filters to part selections
 ;
 ; 2023-08-19
 ; ----------
