@@ -166,16 +166,11 @@
                              (if (:disabled? props) "-back.png" "-front.png"))}))
 (def ui-part-card (fulcro.comp/factory PartCard {:keyfn #(str (:faction %) (:name %))}))
 
-
-(defmutation delete-me [{:keys [cascade]}]
-  (action [{:keys [state ref]}]
-          (swap! state #(fulcro.normalized-state/remove-entity % ref cascade))))
-
 (defn delete-me-button
   ([this]
    (delete-me-button this nil))
   ([this cascade]
-   (icon-button {:onClick #(transact! this [(delete-me {:cascade cascade})])
+   (icon-button {:onClick #(transact! this `[(sst-manager.app/delete-me {:cascade ~cascade})])
                  :variant :solid
                  :color :danger
                  :sx {:position "absolute"
@@ -270,7 +265,12 @@
                                             (denormalize-ships)
                                             (ships->codes)
                                             (codes->url-params)
-                                            (guri/setParam (get-current-url) "ships")))))
+                                            (guri/setParam (get-current-url) "ships"))))
+  state)
+
+(defmutation delete-me [{:keys [cascade]}]
+  (action [{:keys [state ref]}]
+          (swap! state #(update-ship-url-params! (fulcro.normalized-state/remove-entity % ref cascade)))))
 
 (defmutation add-part [{:keys [ship part]}]
   (action
@@ -288,11 +288,10 @@
                                  :ship/id
                                  keys
                                  (reduce max 0) ; (apply max) would explode with an empty list
-                                 )])
-                  new-state (fulcro.merge/merge-component state Part {:part/id (inc max-id) :part part}
-                                                          :append (conj ship :parts))]
-              (update-ship-url-params! new-state)
-              new-state)))))
+                                 )])]
+              (update-ship-url-params!
+               (fulcro.merge/merge-component state Part {:part/id (inc max-id) :part part}
+                                             :append (conj ship :parts))))))))
 
 (defsc PartSelector [this {:keys [selected-faction open-ship]}]
   {:ident (fn [] [:component/id ::PartSelector])
@@ -320,10 +319,9 @@
                            (reduce max 0) ; (apply max) would explode with an empty list
                            )]
             (swap! state (fn [state]
-                           (let [new-state (fulcro.merge/merge-component state Ship {:ship/id (inc max-id) :chassis chassis}
-                                                                         :append [:ships])]
-                             (update-ship-url-params! new-state)
-                             new-state))))))
+                           (update-ship-url-params!
+                            (fulcro.merge/merge-component state Ship {:ship/id (inc max-id) :chassis chassis}
+                                                          :append [:ships])))))))
 
 (defmutation open-chassis-selector [_params]
   (action [{:keys [state]}]
@@ -410,6 +408,7 @@
 ;      - output link
 ;      - qrcode for easy transfer to mobile
 ;      - Also some way to add to current squad, not just replace
+;      - Is it possible to make social shares render good thumbnails of actual builds?
 ; TODO Play mode
 ;      - moving power and heat cubes
 ;      - activating parts, automatically putting power and heat
