@@ -14,6 +14,7 @@
    [goog.uri.utils :as guri]
    [oops.core :refer [oget oset!]]
    ["@mui/icons-material/CheckCircleRounded" :default CheckCircleRounded]
+   ["@mui/icons-material/ContentCopy" :default ContentCopy]
    ["@mui/icons-material/Delete" :default Delete]
    ["@mui/icons-material/Explore" :default Explore]
    ["@mui/icons-material/Gavel" :default Gavel]
@@ -22,18 +23,21 @@
    ["@mui/joy/Button" :default Button]
    ["@mui/joy/FormLabel" :default FormLabel]
    ["@mui/joy/IconButton" :default IconButton]
+   ["@mui/joy/Input" :default Input]
    ["@mui/joy/Modal" :default Modal]
    ["@mui/joy/ModalClose" :default ModalClose]
    ["@mui/joy/ModalDialog" :default ModalDialog]
    ["@mui/joy/ModalOverflow" :default ModalOverflow]
    ["@mui/joy/Radio" :default Radio :refer [radioClasses]]
    ["@mui/joy/RadioGroup" :default RadioGroup]
+   ["@mui/joy/Stack" :default Stack]
    ["@mui/joy/Sheet" :default Sheet]
    ["@mui/joy/Switch" :default Switch]
    ["@mui/joy/Typography" :default Typography]
    ))
 
 (def check-circle-rounded-icon (interop/react-factory CheckCircleRounded))
+(def content-copy-icon (interop/react-factory ContentCopy))
 (def delete-icon (interop/react-factory Delete))
 (def explore-icon (interop/react-factory Explore))
 (def gavel-icon (interop/react-factory Gavel))
@@ -43,12 +47,14 @@
 (def button (interop/react-factory Button))
 (def form-label (interop/react-factory FormLabel))
 (def icon-button (interop/react-factory IconButton))
+(def input (interop/react-factory Input))
 (def modal (interop/react-factory Modal))
 (def modal-close (interop/react-factory ModalClose))
 (def modal-dialog (interop/react-factory ModalDialog))
 (def modal-overflow (interop/react-factory ModalOverflow))
 (def radio (interop/react-factory Radio))
 (def radio-group (interop/react-factory RadioGroup))
+(def stack (interop/react-factory Stack))
 (def sheet (interop/react-factory Sheet))
 (def switch (interop/react-factory Switch))
 (def typography (interop/react-factory Typography))
@@ -197,28 +203,6 @@
   (action [{:keys [state]}]
           (swap! state #(assoc-in % [:component/id ::PartSelector :open-ship] nil))))
 
-;; Design notes
-;; The properties of the ship, like evasion, hull, missiles, available power etc need to be on the abstract ship,
-;; not the chassis card, since there are multiple ways to render these: text, cubes on cards, cubes next to cards etc.
-(defsc Ship [this {id :ship/id
-                   :keys [chassis slots parts evasion hull missiles]}]
-  {:ident :ship/id
-   :query [:ship/id :chassis :slots :evasion :hull :missiles
-           {:parts (get-query Part)}]}
-  (sheet {:sx {:display :flex}}
-         (ui-chassis-card chassis)
-         (delete-me-button this #{:parts})
-         ; TODO
-         ; ☐ Global selector for strict choices or free form
-         ; ☐ Generate a list of part ui components that are either empty based on chassis or populated from selections
-         ; ☐ Condensed view, text only, no cards
-         (mapv ui-part parts)
-         (button {:variant :outlined
-                  :onClick #(transact! this [(open-part-selector)])}
-                 "Add part"
-         )))
-(def ui-ship (fulcro.comp/factory Ship {:keyfn :ship/id}))
-
 (defn positions
   [pred coll]
   (keep-indexed (fn [idx x]
@@ -238,12 +222,54 @@
 (defn code->ship [code]
   (let [[ship-code & part-codes] (map js/parseInt (string/split code #"-"))]
     {:chassis (nth cards/chassis ship-code)
-     :parts (map #(nth cards/parts %) part-codes)}))
+     :parts (map (fn [part-index] {:part (nth cards/parts part-index)}) part-codes)}))
 
 (defn codes->url-params [codes]
   (if (empty? codes)
     ""
     (string/join "," codes)))
+
+(defn add-ship! [ship]
+  (transact! app [`(sst-manager.app/add-ship ~(select-keys ship [:chassis]))])
+  (doseq [part (:parts ship)]
+    (transact! app [`(sst-manager.app/add-part ~part)])))
+
+(defn duplicate-me-button [ship]
+  (icon-button {:onClick #(add-ship! ship)
+                :variant :solid
+                :sx {:position "absolute"
+                     :top "-8px"
+                     :left "32px"}}
+                (content-copy-icon)))
+
+;; Design notes
+;; The properties of the ship, like evasion, hull, missiles, available power etc need to be on the abstract ship,
+;; not the chassis card, since there are multiple ways to render these: text, cubes on cards, cubes next to cards etc.
+(defsc Ship [this {id :ship/id
+                   :keys [chassis slots parts evasion hull missiles]
+                   :as props}]
+  {:ident :ship/id
+   :query [:ship/id :chassis :slots :evasion :hull :missiles
+           {:parts (get-query Part)}]}
+  (stack
+   {}
+   (typography {:level :title-lg} (str (:ship chassis) " " (:type chassis)))
+   (typography {:level :body-md} "(Build code " (ship->code props) ")")
+
+   (sheet {:sx {:display :flex :marginTop 1}}
+          (ui-chassis-card chassis)
+          (delete-me-button this #{:parts})
+          (duplicate-me-button props)
+          ; TODO
+          ; ☐ Global selector for strict choices or free form
+          ; ☐ Generate a list of part ui components that are either empty based on chassis or populated from selections
+          ; ☐ Condensed view, text only, no cards
+          (mapv ui-part parts)
+          (button {:variant :outlined
+                   :onClick #(transact! this [(open-part-selector)])}
+                  "Add part"
+                  ))))
+(def ui-ship (fulcro.comp/factory Ship {:keyfn :ship/id}))
 
 (defn denormalize-ship [state ship]
   (com.fulcrologic.fulcro.algorithms.denormalize/db->tree (get-query Ship)
@@ -351,26 +377,59 @@
 
 (def ui-chassis-selector (fulcro.comp/factory ChassisSelector))
 
-(defsc Root [this {:keys [selected-faction faction-selector-data free-build-selector-data chassis-selector-data part-selector-data ships]}]
+(defmutation open-ship-import [_params]
+  (action [{:keys [state]}]
+          (swap! state #(assoc % :ship-import-open true))))
+
+(defmutation close-ship-import [_params]
+  (action [{:keys [state]}]
+          (swap! state #(assoc % :ship-import-open false))))
+
+(defsc ShipImport [this {:keys [ship-import-open]}]
+  {:ident (fn [] [:component/id ::ShipImport])
+   :query [[:ship-import-open '_]]
+   :initial-state {:ship-import-open false}}
+  (let [close-callback #(transact! this [(close-ship-import)])]
+    (ui-our-modal (fulcro.comp/computed {:open? (boolean ship-import-open)} ; Joy modal doesn't like nulls
+                                        {:callback close-callback})
+                  (fulcro.dom/form {:onSubmit (fn [event]
+                                                (.preventDefault event)
+                                                (add-ship! (code->ship (oget event "target.0.value")))
+                                                (close-callback))}
+                                   (input {:autoFocus true
+                                           :required true
+                                           :placeholder "Input ship build code"})
+                                   (button {:type :submit} "Add"))
+                  )))
+
+(def ui-ship-import (fulcro.comp/factory ShipImport))
+
+(defsc Root [this {:keys [selected-faction faction-selector-data free-build-selector-data chassis-selector-data part-selector-data ship-import-data ships]}]
   {:query [[:selected-faction '_]
            {:faction-selector-data (get-query FactionSelector)}
            {:free-build-selector-data (get-query FreeBuildSelector)}
            {:chassis-selector-data (get-query ChassisSelector)}
            {:part-selector-data (get-query PartSelector)}
+           {:ship-import-data (get-query ShipImport)}
            {:ships (get-query Ship)}]
    :initial-state {:faction-selector-data {}
                    :chassis-selector-data {}
                    :part-selector-data {}
-                   :free-build-selector-data {}}}
+                   :free-build-selector-data {}
+                   :ship-import-data {}}}
   (box {}
        (ui-faction-selector faction-selector-data)
        #_(ui-free-build-selector free-build-selector-data)
        (ui-chassis-selector chassis-selector-data)
        (ui-part-selector part-selector-data)
+       (ui-ship-import ship-import-data)
        (mapv ui-ship ships)
        (button {:variant :outlined
                 :onClick #(transact! this [(open-chassis-selector)])}
                "Add ship")
+       (button {:variant :outlined
+                :onClick #(transact! this [(open-ship-import)])}
+               "Import ship")
        )
   )
 
@@ -383,10 +442,7 @@
   (let [ships (url->ships (get-current-url))]
     (when (not (empty? ships))
       (transact! app [(select-faction {:selected-faction (-> ships first :chassis :faction)})]))
-    (doseq [ship ships]
-      (transact! app [(add-ship (select-keys ship [:chassis]))])
-      (doseq [part (:parts ship)]
-        (transact! app [(add-part {:part part})])))))
+    (run! add-ship! ships)))
 
 (defn ^:export init
   "Shadow-cljs sets this up to be our entry-point function. See shadow-cljs.edn `:init-fn` in the modules of the main build."
@@ -424,6 +480,9 @@
 ;
 ; Unreleased
 ; ----------
+; Importing single ships with code
+; Duplicating ships
+;
 ; 2023-08-19
 ; ----------
 ; URL now updates with the build, and can be used to share builds.
