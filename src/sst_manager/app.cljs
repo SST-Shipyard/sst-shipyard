@@ -21,6 +21,7 @@
    ["@mui/joy/Avatar" :default Avatar]
    ["@mui/joy/Box" :default Box]
    ["@mui/joy/Button" :default Button]
+   ["@mui/joy/CssBaseline" :default CssBaseline]
    ["@mui/joy/FormLabel" :default FormLabel]
    ["@mui/joy/IconButton" :default IconButton]
    ["@mui/joy/Input" :default Input]
@@ -35,6 +36,7 @@
    ["@mui/joy/Switch" :default Switch]
    ["@mui/joy/ToggleButtonGroup" :default ToggleButtonGroup]
    ["@mui/joy/Typography" :default Typography]
+   ["@mui/joy/styles" :refer [CssVarsProvider]]
    ))
 
 (def check-circle-rounded-icon (interop/react-factory CheckCircleRounded))
@@ -46,6 +48,8 @@
 (def avatar (interop/react-factory Avatar))
 (def box (interop/react-factory Box))
 (def button (interop/react-factory Button))
+(def css-baseline (interop/react-factory CssBaseline))
+(def css-vars-provider (interop/react-factory CssVarsProvider))
 (def form-label (interop/react-factory FormLabel))
 (def icon-button (interop/react-factory IconButton))
 (def input (interop/react-factory Input))
@@ -253,15 +257,18 @@
   {:ident :ship/id
    :query [:ship/id :chassis :slots :evasion :hull :missiles
            {:parts (get-query Part)}]}
-  (stack
-   {}
+  (sheet
+   {:sx {:marginTop 1}}
    (typography {:level :title-lg} (str (:ship chassis) " " (:type chassis)))
    (typography {:level :body-md} "(Build code " (ship->code props) ")")
 
-   (sheet {:sx {:display :flex :marginTop 1}}
-          (ui-chassis-card chassis)
+   (stack {:direction :row
+           :sx {:position :relative
+                :marginTop 1
+                :flex-wrap :wrap}}
           (delete-me-button this #{:parts})
           (duplicate-me-button props)
+          (ui-chassis-card chassis)
           ; TODO
           ; ☐ Global selector for strict choices or free form
           ; ☐ Generate a list of part ui components that are either empty based on chassis or populated from selections
@@ -330,23 +337,29 @@
                    :selected-slot nil}}
   (ui-our-modal (fulcro.comp/computed {:open? (boolean open-ship)} ; Joy modal doesn't like nulls
                                       {:callback #(transact! this [(close-part-selector)])})
-                (toggle-button-group {:variant :outlined
-                                      :value selected-slot
-                                      :onChange (fn [event new-value] (set-value! this :selected-slot new-value))}
-                                     (->> ["cockpit" "thruster" "wing" "systems"]
-                                          (mapv #(button {:key %
-                                                          :value %}
-                                                         (string/capitalize (name %))))))
-                (->> cards/parts
-                     (filter #(and (= selected-faction (:faction %))
-                                   (or (not selected-slot)
-                                       (#{(keyword selected-slot)} (:slot %)))))
-                     (mapv #(sheet {:key (str (:faction %) (:name %))
-                                    :sx {:m 1}
-                                    :onClick (fn []
-                                               (transact! app [(add-part {:part % :ship (fulcro.comp/get-ident Ship open-ship)})
-                                                               (close-part-selector)]))}
-                                   (ui-part-card %))))))
+                (stack
+                 {:sx {:align-items :center}}
+                 (toggle-button-group {:variant :outlined
+                                       :value selected-slot
+                                       :onChange (fn [event new-value] (set-value! this :selected-slot new-value))}
+                                      (->> ["cockpit" "thruster" "wing" "systems"]
+                                           (mapv #(button {:key %
+                                                           :value %}
+                                                          (string/capitalize (name %))))))
+                 (stack
+                  {:direction :row
+                   :sx {:flex-wrap :wrap
+                        :justify-content :center}}
+                  (->> cards/parts
+                       (filter #(and (= selected-faction (:faction %))
+                                     (or (not selected-slot)
+                                         (#{(keyword selected-slot)} (:slot %)))))
+                       (mapv #(sheet {:key (str (:faction %) (:name %))
+                                      :sx {:m 1}
+                                      :onClick (fn []
+                                                 (transact! app [(add-part {:part % :ship (fulcro.comp/get-ident Ship open-ship)})
+                                                                 (close-part-selector)]))}
+                                     (ui-part-card %))))))))
 
 (def ui-part-selector (fulcro.comp/factory PartSelector))
 
@@ -379,14 +392,18 @@
   (ui-our-modal (fulcro.comp/computed {:open? (boolean chassis-selector-open)} ; Joy modal doesn't like nulls
                                       {:callback #(transact! this [(close-chassis-selector)])}
                  )
-                (->> cards/chassis
-                     (filter #(= selected-faction (:faction %)))
-                     (mapv #(sheet {:key (:type %)
-                                    :sx {:m 1}
-                                    :onClick (fn []
-                                               (transact! app [(add-ship {:chassis %})
-                                                               (close-chassis-selector)]))}
-                                   (ui-chassis-card %))))))
+                (stack
+                 {:direction :row
+                  :sx {:flex-wrap :wrap
+                       :justify-content :center}}
+                 (->> cards/chassis
+                      (filter #(= selected-faction (:faction %)))
+                      (mapv #(sheet {:key (:type %)
+                                     :sx {:m 1}
+                                     :onClick (fn []
+                                                (transact! app [(add-ship {:chassis %})
+                                                                (close-chassis-selector)]))}
+                                    (ui-chassis-card %)))))))
 
 (def ui-chassis-selector (fulcro.comp/factory ChassisSelector))
 
@@ -430,20 +447,24 @@
                    :part-selector-data {}
                    :free-build-selector-data {}
                    :ship-import-data {}}}
-  (box {}
-       (ui-faction-selector faction-selector-data)
-       #_(ui-free-build-selector free-build-selector-data)
-       (ui-chassis-selector chassis-selector-data)
-       (ui-part-selector part-selector-data)
-       (ui-ship-import ship-import-data)
-       (mapv ui-ship ships)
-       (button {:variant :outlined
-                :onClick #(transact! this [(open-chassis-selector)])}
-               "Add ship")
-       (button {:variant :outlined
-                :onClick #(transact! this [(open-ship-import)])}
-               "Import ship")
-       )
+  (css-vars-provider
+   {}
+   (css-baseline)
+   (box
+    {:sx {:margin 2}}
+    (ui-faction-selector faction-selector-data)
+    #_(ui-free-build-selector free-build-selector-data)
+    (ui-chassis-selector chassis-selector-data)
+    (ui-part-selector part-selector-data)
+    (ui-ship-import ship-import-data)
+    (mapv ui-ship ships)
+    (button {:variant :outlined
+             :onClick #(transact! this [(open-chassis-selector)])}
+            "Add ship")
+    (button {:variant :outlined
+             :onClick #(transact! this [(open-ship-import)])}
+            "Import ship")
+    ))
   )
 
 (defn url->ships [url]
@@ -491,11 +512,12 @@
 ; Changelog
 ; =========
 ;
-; Unreleased
+; 2023-08-20
 ; ----------
 ; Importing single ships with code
 ; Duplicating ships
 ; Filters to part selections
+; Works a bit better on narrower screens
 ;
 ; 2023-08-19
 ; ----------
