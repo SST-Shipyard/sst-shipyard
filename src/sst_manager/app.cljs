@@ -10,12 +10,15 @@
    [com.fulcrologic.fulcro.components :as fulcro.comp :refer [defsc get-query transact!]]
    [com.fulcrologic.fulcro.dom :as fulcro.dom]
    [com.fulcrologic.fulcro.mutations :refer [defmutation set-value! toggle!]]
+   [com.fulcrologic.fulcro.react.hooks :refer [use-state]]
    [com.fulcrologic.fulcro.react.version18 :refer [with-react18]]
    [goog.uri.utils :as guri]
    [oops.core :refer [oget oset!]]
    ["@mui/icons-material/CheckCircleRounded" :default CheckCircleRounded]
    ["@mui/icons-material/ContentCopy" :default ContentCopy]
    ["@mui/icons-material/Delete" :default Delete]
+   ["@mui/icons-material/Done" :default Done]
+   ["@mui/icons-material/Edit" :default Edit]
    ["@mui/icons-material/Explore" :default Explore]
    ["@mui/icons-material/Gavel" :default Gavel]
    ["@mui/joy/Avatar" :default Avatar]
@@ -42,6 +45,8 @@
 (def check-circle-rounded-icon (interop/react-factory CheckCircleRounded))
 (def content-copy-icon (interop/react-factory ContentCopy))
 (def delete-icon (interop/react-factory Delete))
+(def done-icon (interop/react-factory Done))
+(def edit-icon (interop/react-factory Edit))
 (def explore-icon (interop/react-factory Explore))
 (def gavel-icon (interop/react-factory Gavel))
 
@@ -217,18 +222,38 @@
                 coll))
 
 (defn ship->code [ship]
-  (let [chassis-index (first (positions #{(:chassis ship)} cards/chassis))
-        part-indices (map #(first (positions #{(:part %)} cards/parts)) (:parts ship))]
+  (let [chassis-code (str "c" (first (positions #{(:chassis ship)} cards/chassis)))
+        name-code (if (empty? (:name ship))
+                    nil
+                    (str "n" (:name ship)))
+        part-codes (map #(str "p" (first (positions #{(:part %)} cards/parts))) (:parts ship))]
     (string/join "-"
-                 (apply conj [chassis-index] part-indices))))
+                 (remove nil? (apply conj [chassis-code name-code] part-codes)))))
 
 (defn ships->codes [ships]
   (map ship->code ships))
 
 (defn code->ship [code]
-  (let [[ship-code & part-codes] (map js/parseInt (string/split code #"-"))]
-    {:chassis (nth cards/chassis ship-code)
-     :parts (map (fn [part-index] {:part (nth cards/parts part-index)}) part-codes)}))
+  (if (= \c (nth code 0))
+	; new style code: c1-nMyname-p1-p2-p3
+	(reduce
+	 (fn [ship code-part]
+	   (let [rest-part (subs code-part 1)]
+		 (case (nth code-part 0)
+		   \c (assoc ship :chassis (nth cards/chassis (js/parseInt rest-part)))
+           \n (assoc ship :name rest-part)
+           \p (update ship :parts #(conj (or % []) {:part (nth cards/parts (js/parseInt rest-part))})))))
+	 {}
+	 (string/split code #"-"))
+	; old style code: 1-2-3-4
+	(let [[ship-code & part-codes] (map js/parseInt (string/split code #"-"))]
+	  {:chassis (nth cards/chassis ship-code)
+	   :parts (map (fn [part-index] {:part (nth cards/parts part-index)}) part-codes)})))
+
+(comment
+  (code->ship "c0-nFoo-p2-p3-p4"))
+(comment
+  (code->ship "1-2-3"))
 
 (defn codes->url-params [codes]
   (if (empty? codes)
@@ -236,7 +261,7 @@
     (string/join "," codes)))
 
 (defn add-ship! [ship]
-  (transact! app [`(sst-manager.app/add-ship ~(select-keys ship [:chassis]))])
+  (transact! app [`(sst-manager.app/add-ship ~(dissoc ship :parts))])
   (doseq [part (:parts ship)]
     (transact! app [`(sst-manager.app/add-part ~part)])))
 
@@ -248,38 +273,7 @@
                      :left "32px"}}
                 (content-copy-icon)))
 
-;; Design notes
-;; The properties of the ship, like evasion, hull, missiles, available power etc need to be on the abstract ship,
-;; not the chassis card, since there are multiple ways to render these: text, cubes on cards, cubes next to cards etc.
-(defsc Ship [this {id :ship/id
-                   :keys [chassis slots parts evasion hull missiles]
-                   :as props}]
-  {:ident :ship/id
-   :query [:ship/id :chassis :slots :evasion :hull :missiles
-           {:parts (get-query Part)}]}
-  (sheet
-   {:sx {:marginTop 1}}
-   (typography {:level :title-lg} (str (:ship chassis) " " (:type chassis)))
-   (typography {:level :body-md} "(Build code " (ship->code props) ")")
-
-   (stack {:direction :row
-           :sx {:position :relative
-                :marginTop 1
-                :flex-wrap :wrap}}
-          (delete-me-button this #{:parts})
-          (duplicate-me-button props)
-          (ui-chassis-card chassis)
-          ; TODO
-          ; ☐ Global selector for strict choices or free form
-          ; ☐ Generate a list of part ui components that are either empty based on chassis or populated from selections
-          ; ☐ Condensed view, text only, no cards
-          (mapv ui-part parts)
-          (button {:variant :outlined
-                   :onClick #(transact! this [(open-part-selector)])}
-                  "Add part"
-                  ))))
-(def ui-ship (fulcro.comp/factory Ship {:keyfn :ship/id}))
-
+(declare Ship)
 (defn denormalize-ship [state ship]
   (com.fulcrologic.fulcro.algorithms.denormalize/db->tree (get-query Ship)
                                                           ship
@@ -303,9 +297,73 @@
                                             (guri/setParam (get-current-url) "ships"))))
   state)
 
+(defmutation change-ship-name [{:keys [new-name]}]
+  (action [{:keys [state ref]}]
+          (swap! state #(update-ship-url-params!
+                         (assoc-in % (conj ref :name) new-name)))))
+
+;; Design notes
+;; The properties of the ship, like evasion, hull, missiles, available power etc need to be on the abstract ship,
+;; not the chassis card, since there are multiple ways to render these: text, cubes on cards, cubes next to cards etc.
+(defsc Ship [this {id :ship/id
+                   ship-name :name ; To avoid masking a core function
+                   :keys [chassis parts evasion hull missiles]
+                   :as props}]
+  {:ident :ship/id
+   :query [:ship/id :name :chassis :evasion :hull :missiles
+           {:parts (get-query Part)}]
+   :use-hooks? true}
+  (sheet
+   {:sx {:marginTop 1}}
+   (let [[editing? set-editing] (use-state false)
+         default-name (str (:ship chassis) " " (:type chassis))]
+     (stack {:direction :row}
+            (if editing?
+              (fulcro.dom/form
+               {:onSubmit (fn [event]
+                            (.preventDefault event)
+                            (transact! this [(change-ship-name {:new-name (oget event "target.0.value")})])
+                            (set-editing false))}
+               (input {:placeholder default-name
+                       :defaultValue ship-name
+                       :autoFocus true
+                       :sx {"--Input-decoratorChildHeight" "40px"}
+                       :endDecorator (icon-button {:type :submit
+                                                   :variant :solid
+                                                   :color :primary
+                                                   :sx {:borderTopLeftRadius 0
+                                                        :borderBottomLeftRadius 0}}
+                                                  (done-icon))
+                       }))
+              (typography {:level :title-lg} (if (empty? ship-name) default-name ship-name)))
+            (if (not editing?)
+              (icon-button {:size :sm
+                            :onClick #(set-editing (not editing?))}
+                           (edit-icon)))))
+   (typography {:level :body-md} "(Build code " (ship->code props) ")")
+
+   (stack {:direction :row
+           :sx {:position :relative
+                :marginTop 1
+                :flex-wrap :wrap}}
+          (delete-me-button this #{:parts})
+          (duplicate-me-button props)
+          (ui-chassis-card chassis)
+          ; TODO
+          ; ☐ Global selector for strict choices or free form
+          ; ☐ Generate a list of part ui components that are either empty based on chassis or populated from selections
+          ; ☐ Condensed view, text only, no cards
+          (mapv ui-part parts)
+          (button {:variant :outlined
+                   :onClick #(transact! this [(open-part-selector)])}
+                  "Add part"
+                  ))))
+(def ui-ship (fulcro.comp/factory Ship {:keyfn :ship/id}))
+
 (defmutation delete-me [{:keys [cascade]}]
   (action [{:keys [state ref]}]
           (swap! state #(update-ship-url-params! (fulcro.normalized-state/remove-entity % ref cascade)))))
+
 
 (defmutation add-part [{:keys [ship part]}]
   (action
@@ -363,7 +421,7 @@
 
 (def ui-part-selector (fulcro.comp/factory PartSelector))
 
-(defmutation add-ship [{:keys [chassis]}]
+(defmutation add-ship [ship]
   (action [{:keys [state]}]
           (let [max-id (->> @state
                            :ship/id
@@ -372,7 +430,7 @@
                            )]
             (swap! state (fn [state]
                            (update-ship-url-params!
-                            (fulcro.merge/merge-component state Ship {:ship/id (inc max-id) :chassis chassis}
+                            (fulcro.merge/merge-component state Ship (assoc ship :ship/id (inc max-id))
                                                           :append [:ships])))))))
 
 (defmutation open-chassis-selector [_params]
@@ -511,6 +569,11 @@
 ;      - missile counters
 ;      - save state in URL or some other durable state to avoid losing all when tab is pushed out of ram? Needs to work with multiple tabs running different games
 ; TODO Streamer mode
+
+; Saving ships
+; - IndexedDB does not have events for changes coming in from other tabs; need to use BroadcastChannel separately,
+;   or localstorage
+; - Need to ask for persisten storage, or things might get evicted when not visiting the site often
 
 ; Changelog
 ; =========
