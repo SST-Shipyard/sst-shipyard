@@ -200,7 +200,7 @@
                    :keys [part]}]
   {:ident :part/id
    :query [:part/id :part]}
-  (sheet {:sx {:width :fit-content}}
+  (sheet {:sx {:width :fitContent}}
          (ui-part-card part)
          (delete-me-button this)))
 
@@ -345,7 +345,7 @@
    (stack {:direction :row
            :sx {:position :relative
                 :marginTop 1
-                :flex-wrap :wrap}}
+                :flexWrap :wrap}}
           (delete-me-button this #{:parts})
           (duplicate-me-button props)
           (ui-chassis-card chassis)
@@ -396,7 +396,7 @@
   (ui-our-modal (fulcro.comp/computed {:open? (boolean open-ship)} ; Joy modal doesn't like nulls
                                       {:callback #(transact! this [(close-part-selector)])})
                 (stack
-                 {:sx {:align-items :center}}
+                 {:sx {:alignItems :center}}
                  (toggle-button-group {:variant :outlined
                                        :value selected-slot
                                        :onChange (fn [event new-value] (set-value! this :selected-slot new-value))}
@@ -406,8 +406,8 @@
                                                           (string/capitalize (name %))))))
                  (stack
                   {:direction :row
-                   :sx {:flex-wrap :wrap
-                        :justify-content :center}}
+                   :sx {:flexWrap :wrap
+                        :justifyContent :center}}
                   (->> cards/parts
                        (filter #(and (= selected-faction (:faction %))
                                      (or (not selected-slot)
@@ -452,8 +452,8 @@
                  )
                 (stack
                  {:direction :row
-                  :sx {:flex-wrap :wrap
-                       :justify-content :center}}
+                  :sx {:flexWrap :wrap
+                       :justifyContent :center}}
                  (->> cards/chassis
                       (filter #(= selected-faction (:faction %)))
                       (mapv #(sheet {:key (:type %)
