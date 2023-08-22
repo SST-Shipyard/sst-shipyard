@@ -470,6 +470,9 @@
 (defn url->ships [url]
   (map code->ship (-> url
                       (guri/getParamValue "ships")
+                      ; If split cannot find any commas, it will return original string, not empty vector.
+                      ; Then code->ship will choke on the empty string
+                      (str ",")
                       (string/split #","))))
 
 (defn init-ships-from-current-url! []
