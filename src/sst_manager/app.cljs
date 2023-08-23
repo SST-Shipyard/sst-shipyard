@@ -6,6 +6,7 @@
    [com.fulcrologic.fulcro.algorithms.react-interop :as interop]
    [com.fulcrologic.fulcro.algorithms.merge :as fulcro.merge]
    [com.fulcrologic.fulcro.algorithms.normalized-state :as fulcro.normalized-state]
+   [com.fulcrologic.fulcro.algorithms.tx-processing :as fulcro.tx-processing]
    [com.fulcrologic.fulcro.application :as fulcro.app]
    [com.fulcrologic.fulcro.components :as fulcro.comp :refer [defsc get-query transact!]]
    [com.fulcrologic.fulcro.dom :as fulcro.dom]
@@ -261,6 +262,7 @@
 
 (comment
   (code->ship "c0-nFoo-p2-p3-p4"))
+
 (comment
   (code->ship "1-2-3"))
 
@@ -669,6 +671,9 @@
     (ui-chassis-selector chassis-selector-data)
     (ui-part-selector part-selector-data)
     (ui-ship-import ship-import-data)
+    (typography {:level :body-lg} "Squad total points: " (->> ships
+                                                             (map #(get-in % [:chassis :points]))
+                                                             (reduce +)))
     (mapv ui-ship ships)
     (button {:variant :outlined
              :onClick #(transact! this [(open-chassis-selector)])}
@@ -698,9 +703,13 @@
   "Shadow-cljs sets this up to be our entry-point function. See shadow-cljs.edn `:init-fn` in the modules of the main build."
   []
   (load-presets-from-storage!)
-  (fulcro.app/mount! app Root "app")
   (init-ships-from-current-url!)
+  (fulcro.tx-processing/activate-submissions! app) ; Forces transactions created in initial loads to be handled before first render, avoiding flash of uninitialized ui
+  (fulcro.app/mount! app Root "app")
   (js/console.log "Loaded"))
+
+(comment
+  )
 
 (defn ^:export refresh
   "During development, shadow-cljs will call this on every hot reload of source. See shadow-cljs.edn"
@@ -726,13 +735,15 @@
 ;      - save state in URL or some other durable state to avoid losing all when tab is pushed out of ram? Needs to work with multiple tabs running different games
 ; TODO Streamer mode
 
-; Saving ships
-; - IndexedDB does not have events for changes coming in from other tabs; need to use BroadcastChannel separately,
-;   or localstorage
-; - Need to ask for persisten storage, or things might get evicted when not visiting the site often
-
 ; Changelog
 ; =========
+; 2023-08-23
+; ----------
+; Squad total points
+;
+; 2023-08-22
+; ----------
+; Ship names and saving/loading presets
 ;
 ; 2023-08-20
 ; ----------

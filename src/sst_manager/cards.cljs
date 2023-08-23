@@ -5,91 +5,109 @@
    {:faction :forge
     :ship "Falx"
     :type "SC-41 escort"
+    :points 5
     :slots [:cockpit :thruster :thruster :wing :systems :systems :systems :systems]
     }
    {:faction :forge
     :ship "Falx"
     :type "GA-15 Ground Assault"
+    :points 5
     :slots [:cockpit :thruster :thruster :wing :systems :systems :systems :systems]
     }
    {:faction :forge
     :ship "Falx"
     :type "XF-8 Experimental Fighter"
+    :points 5
     :slots [:cockpit :thruster :thruster :wing :systems :systems :systems :systems]
     }
    {:faction :forge
     :ship "Lance"
     :type "SV-51 Scout"
+    :points 3
     :slots [:cockpit :thruster :wing :systems :systems]
     }
    {:faction :forge
     :ship "Lance"
     :type "SAC-30 Attack Craft"
+    :points 3
     :slots [:cockpit :thruster :wing :systems :systems]
     }
    {:faction :forge
     :ship "Sabre"
     :type "XF-23 Fighter"
+    :points 4
     :slots [:cockpit :thruster :wing :systems :systems :systems]
     }
    {:faction :forge
     :ship "Sabre"
     :type "XB-04 Light Bomber"
+    :points 4
     :slots [:cockpit :thruster :wing :systems :systems :systems]
     }
    {:faction :forge
     :ship "Sabre"
     :type "XR-01 Fast Recon"
+    :points 4
     :slots [:cockpit :thruster :wing :systems :systems :systems]
     }
    {:faction :forge
     :ship "Sabre"
     :type "XG-07 Gunship"
+    :points 4
     :slots [:cockpit :thruster :wing :systems :systems :systems]
     }
    {:faction :komplex
     :ship "Locust"
     :type "KLAW Stealth Craft"
+    :points 3
     :slots [:cockpit :thruster :wing :systems :systems]
     }
    {:faction :komplex
     :ship "Locust"
     :type "KLAW Close Support Fighter"
+    :points 3
     :slots [:cockpit :thruster :wing :systems :systems]
     }
    {:faction :komplex
     :ship "Scarab"
     :type "KLAW Interceptor"
+    :points 4
     :slots [:cockpit :thruster :wing :systems :systems :systems]
     }
    {:faction :komplex
     :ship "Scarab"
     :type "Klaw Light Fighter"
+    :points 4
     :slots [:cockpit :thruster :wing :systems :systems :systems]
     }
    {:faction :komplex
     :ship "Scarab"
     :type "Klaw Attack Striker"
+    :points 4
     :slots [:cockpit :thruster :wing :systems :systems :systems]
     }
    {:faction :komplex
     :ship "Scarab"
     :type "Klaw Jammer"
+    :points 4
     :slots [:cockpit :thruster :wing :systems :systems :systems]
     }
    {:faction :komplex
     :ship "Wasp"
     :type "KLAW Heavy Fighter"
+    :points 5
     :slots [:cockpit :thruster :wing :wing :systems :systems :systems :systems]
     }
    {:faction :komplex
     :ship "Wasp"
     :type "KLAW Fighter Bomber"
+    :points 5
     :slots [:cockpit :thruster :wing :wing :systems :systems :systems :systems]
     }
    {:faction :komplex
     :ship "Wasp"
     :type "KLAW Deep Recon"
+    :points 5
     :slots [:cockpit :thruster :wing :wing :systems :systems :systems :systems]
     }
    ]
