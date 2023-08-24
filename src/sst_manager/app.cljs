@@ -165,15 +165,23 @@
 ;; And not every chassis in the squad has a visible card, for example when rendering as text.
 ;; Therefore it makes sense to separate the image rendering from the gameplay stats.
 (defsc ChassisCard [this props]
-  {}
+  {:use-hooks? true}
   ; TODO Maybe figure some other name than "type", so could destructure without shadowing core functions
-  (fulcro.dom/img {:src (str "https://cards.snapshipstactics.com/card-images/chassis-"
-                             (name (:faction props))
-                             "-"
-                             (string/lower-case (:ship props))
-                             "-"
-                             (string/replace (string/lower-case (:type props)) #" " "-")
-                             (if (:back-side props) "-back.png" "-front.png"))}))
+  (let [[flipped? setFlipped] (use-state false)
+        url-base (str "https://cards.snapshipstactics.com/card-images/chassis-"
+                      (name (:faction props))
+                      "-"
+                      (string/lower-case (:ship props))
+                      "-"
+                      (string/replace (string/lower-case (:type props)) #" " "-"))]
+    (box
+     {:onClick #(setFlipped (not flipped?))
+      :sx (merge {:transition "transform 0.8s"
+                  :transformStyle "preserve-3d"
+                  :width "315px" :height "315px"}
+                 (when flipped? {:transform "rotateY(180deg)"}))}
+     (fulcro.dom/img {:style {:position :absolute :backfaceVisibility :hidden} :src (str url-base "-front.png")})
+     (fulcro.dom/img {:style {:position :absolute :transform "rotateY(180deg)" :backfaceVisibility :hidden} :src (str url-base "-back.png")}))))
 (def ui-chassis-card (fulcro.comp/factory ChassisCard {:keyfn :type}))
 
 (defsc PartCard [this props]
@@ -400,9 +408,9 @@
            :sx {:position :relative
                 :marginTop 1
                 :flexWrap :wrap}}
+          (ui-chassis-card chassis)
           (delete-me-button this #{:parts})
           (duplicate-me-button props)
-          (ui-chassis-card chassis)
           (save-ship-button props)
           ; TODO
           ; ☐ Global selector for strict choices or free form
