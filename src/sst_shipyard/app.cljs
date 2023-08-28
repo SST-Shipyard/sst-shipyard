@@ -1,7 +1,7 @@
-(ns sst-manager.app
+(ns sst-shipyard.app
   (:require
-   [sst-manager.cards :as cards]
-   [sst-manager.icons :as icons]
+   [sst-shipyard.cards :as cards]
+   [sst-shipyard.icons :as icons]
    [clojure.string :as string]
    [com.fulcrologic.fulcro.algorithms.react-interop :as interop]
    [com.fulcrologic.fulcro.algorithms.merge :as fulcro.merge]
@@ -200,7 +200,7 @@
   ([this]
    (delete-me-button this nil))
   ([this cascade]
-   (icon-button {:onClick #(transact! this `[(sst-manager.app/delete-me {:cascade ~cascade})])
+   (icon-button {:onClick #(transact! this `[(sst-shipyard.app/delete-me {:cascade ~cascade})])
                  :variant :solid
                  :color :danger
                  :sx {:position "absolute"
@@ -280,9 +280,9 @@
     (string/join "," codes)))
 
 (defn add-ship! [ship]
-  (transact! app [`(sst-manager.app/add-ship ~(dissoc ship :parts))])
+  (transact! app [`(sst-shipyard.app/add-ship ~(dissoc ship :parts))])
   (doseq [part (:parts ship)]
-    (transact! app [`(sst-manager.app/add-part ~part)])))
+    (transact! app [`(sst-shipyard.app/add-part ~part)])))
 
 (defn duplicate-me-button [ship]
   (icon-button {:onClick #(add-ship! ship)

@@ -1,4 +1,4 @@
-(ns sst-manager.cards)
+(ns sst-shipyard.cards)
 
 (def chassis
   [

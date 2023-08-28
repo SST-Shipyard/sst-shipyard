@@ -1,6 +1,7 @@
 {
-  "name": "sst-manager",
+  "name": "sst-shipyard",
   "version": "0.0.1",
+  "license": "MIT",
   "private": true,
   "devDependencies": {
     "shadow-cljs": "2.25.2"

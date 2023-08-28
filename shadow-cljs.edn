@@ -14,8 +14,8 @@
  {:main {:target     :browser
          :output-dir "public/js/main"
          :asset-path "/js/main"
-         :modules    {:main {:init-fn sst-manager.app/init
-                             :entries [sst-manager.app]}}
-         :devtools   {:after-load sst-manager.app/refresh
+         :modules    {:main {:init-fn sst-shipyard.app/init
+                             :entries [sst-shipyard.app]}}
+         :devtools   {:after-load sst-shipyard.app/refresh
                       :preloads   [com.fulcrologic.fulcro.inspect.preload
                                    com.fulcrologic.fulcro.inspect.dom-picker-preload]}}}}

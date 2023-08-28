@@ -1,4 +1,4 @@
-(ns sst-manager.icons)
+(ns sst-shipyard.icons)
 
 (def forge "https://cards.snapshipstactics.com/icons/icon_faction_forge_noname.png")
 (def komplex "https://cards.snapshipstactics.com/icons/icon_faction_komplex_noname.png")
