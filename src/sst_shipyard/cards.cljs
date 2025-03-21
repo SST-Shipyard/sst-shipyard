@@ -115,16 +115,16 @@
 
 (def parts
   [
-   {:slot :systems
+   {:slot :utility
     :faction :forge
     :name "bf-bulkhead"}
-   {:slot :systems
+   {:slot :utility
     :faction :forge
     :name "lance-booster"}
-   {:slot :systems
+   {:slot :utility
     :faction :forge
     :name "falx-booster"}
-   {:slot :systems
+   {:slot :utility
     :faction :forge
     :name "xre-extender"}
    {:slot :cockpit
@@ -136,28 +136,28 @@
    {:slot :cockpit
     :faction :forge
     :name "xf-25-cockpit"}
-   {:slot :systems
+   {:slot :fin
     :faction :forge
     :name "maneuvering-fins"}
-   {:slot :systems
+   {:slot :fin
     :faction :forge
     :name "falx-fins"}
-   {:slot :systems
+   {:slot :fin
     :faction :forge
     :name "triple-tailfin"}
-   {:slot :systems
+   {:slot :missile
     :faction :forge
     :name "xr-135-missile-rack"}
-   {:slot :systems
+   {:slot :missile
     :faction :forge
     :name "xr70-missile-pod"}
-   {:slot :systems
+   {:slot :missile
     :faction :forge
     :name "h.i.v.e-missile-pod"}
-   {:slot :systems
+   {:slot :vent
     :faction :forge
     :name "sls-solar"}
-   {:slot :systems
+   {:slot :utility
     :faction :forge
     :name "ls-eye"}
    {:slot :thruster
@@ -178,28 +178,28 @@
    {:slot :thruster
     :faction :forge
     :name "sv-engine"}
-   {:slot :systems
+   {:slot :missile
     :faction :forge
     :name "mark-48-shipbreaker"}
-   {:slot :systems
+   {:slot :vent
     :faction :forge
     :name "medium-exhaust"}
-   {:slot :systems
+   {:slot :vent
     :faction :forge
     :name "falx-nose"}
-   {:slot :systems
+   {:slot :vent
     :faction :forge
     :name "small-exhaust"}
-   {:slot :systems
+   {:slot :weapon
     :faction :forge
     :name "scar-4-pulse-laser"}
-   {:slot :systems
+   {:slot :weapon
     :faction :forge
     :name "mk16-autocannon"}
-   {:slot :systems
+   {:slot :weapon
     :faction :forge
     :name "tdp-8-plasma-cannon"}
-   {:slot :systems
+   {:slot :weapon
     :faction :forge
     :name "mx-massdriver-shotgun"}
    {:slot :wing
@@ -214,10 +214,10 @@
    {:slot :wing
     :faction :forge
     :name "xj-7-wings"}
-   {:slot :systems
+   {:slot :utility
     :faction :komplex
     :name "kp-bulkhead"}
-   {:slot :systems
+   {:slot :utility
     :faction :komplex
     :name "bz2-booster"}
    {:slot :cockpit
@@ -229,31 +229,31 @@
    {:slot :cockpit
     :faction :komplex
     :name "wasp-cockpit"}
-   {:slot :systems
+   {:slot :utility
     :faction :komplex
     :name "ecm-fin"}
-   {:slot :systems
+   {:slot :fin
     :faction :komplex
     :name "maneuvering-fins"}
-   {:slot :systems
+   {:slot :fin
     :faction :komplex
     :name "tailfin"}
-   {:slot :systems
+   {:slot :fin
     :faction :komplex
     :name "dual-tailfin"}
-   {:slot :systems
+   {:slot :fin
     :faction :komplex
     :name "tailfin-2"}
-   {:slot :systems
+   {:slot :fin
     :faction :komplex
     :name "dual-tailfin-2"}
-   {:slot :systems
+   {:slot :fin
     :faction :komplex
     :name "tailfin-3"}
-   {:slot :systems
+   {:slot :missile
     :faction :komplex
     :name "cl-arm-rockets"}
-   {:slot :systems
+   {:slot :missile
     :faction :komplex
     :name "zm2-heavy-missile"}
    {:slot :thruster
@@ -277,43 +277,43 @@
    {:slot :thruster
     :faction :komplex
     :name "wasp-thruster"}
-   {:slot :systems
+   {:slot :missile
     :faction :komplex
     :name "cx6-anti-matter-torpedo"}
-   {:slot :systems
+   {:slot :missile
     :faction :komplex
     :name "cx2-anti-ship-torpedo"}
-   {:slot :systems
+   {:slot :vent
     :faction :komplex
     :name "k2-radiator-array"}
-   {:slot :systems
+   {:slot :vent
     :faction :komplex
     :name "small-exhaust"}
-   {:slot :systems
+   {:slot :vent
     :faction :komplex
     :name "medium-exhaust"}
-   {:slot :systems
+   {:slot :vent
     :faction :komplex
     :name "kx-power-cycle"}
-   {:slot :systems
+   {:slot :weapon
     :faction :komplex
     :name "cl-23-railgun"}
-   {:slot :systems
+   {:slot :weapon
     :faction :komplex
     :name "c6-3-gatling-gun"}
-   {:slot :systems
+   {:slot :weapon
     :faction :komplex
     :name "c-t22-he-cannon"}
-   {:slot :systems
+   {:slot :weapon
     :faction :komplex
     :name "db8-proton-cannon"}
-   {:slot :systems
+   {:slot :weapon
     :faction :komplex
     :name "cpl-3-ball-turret"}
-   {:slot :systems
+   {:slot :weapon
     :faction :komplex
     :name "wg5-grenade-cluster"}
-   {:slot :systems
+   {:slot :weapon
     :faction :komplex
     :name "cpl-2-mantis-laser"}
    {:slot :wing

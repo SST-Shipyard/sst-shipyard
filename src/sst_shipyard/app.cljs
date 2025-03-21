@@ -476,7 +476,9 @@
                   (->> cards/parts
                        (filter #(and (= selected-faction (:faction %))
                                      (or (not selected-slot)
-                                         (#{(keyword selected-slot)} (:slot %)))))
+                                         (if (= selected-slot "systems")
+                                           (#{:fin :vent :missile :weapon :utility} (:slot %))
+                                           (#{(keyword selected-slot)} (:slot %))))))
                        (mapv #(sheet {:key (str (:faction %) (:name %))
                                       :sx {:m 1}
                                       :onClick (fn []
