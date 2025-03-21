@@ -5,7 +5,8 @@
  :dependencies
  [
   [binaryage/oops "0.7.2"]
-  [com.fulcrologic/fulcro "3.6.8"]
+  [com.fulcrologic/fulcro "3.8.3"]
+  [com.fulcrologic/fulcro-inspect "1.0.3"]
   ]
 
  :dev-http {8000 "public"}
@@ -17,5 +18,4 @@
          :modules    {:main {:init-fn sst-shipyard.app/init
                              :entries [sst-shipyard.app]}}
          :devtools   {:after-load sst-shipyard.app/refresh
-                      :preloads   [com.fulcrologic.fulcro.inspect.preload
-                                   com.fulcrologic.fulcro.inspect.dom-picker-preload]}}}}
+                      :preloads [com.fulcrologic.devtools.chrome-preload]}}}}

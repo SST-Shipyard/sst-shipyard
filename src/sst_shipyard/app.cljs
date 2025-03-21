@@ -9,10 +9,12 @@
    [com.fulcrologic.fulcro.algorithms.tx-processing :as fulcro.tx-processing]
    [com.fulcrologic.fulcro.application :as fulcro.app]
    [com.fulcrologic.fulcro.components :as fulcro.comp :refer [defsc get-query transact!]]
+   [com.fulcrologic.devtools.common.target :refer [ido]]
    [com.fulcrologic.fulcro.dom :as fulcro.dom]
    [com.fulcrologic.fulcro.mutations :refer [defmutation set-value! toggle!]]
    [com.fulcrologic.fulcro.react.hooks :refer [use-state]]
    [com.fulcrologic.fulcro.react.version18 :refer [with-react18]]
+   [fulcro.inspect.tool :as inspect.tool]
    [goog.uri.utils :as guri]
    [oops.core :refer [ocall! oget]]
    ["@mui/icons-material/CheckCircleRounded" :default CheckCircleRounded]
@@ -76,6 +78,7 @@
 (def typography (interop/react-factory Typography))
 
 (defonce app (with-react18 (fulcro.app/fulcro-app)))
+(ido (inspect.tool/add-fulcro-inspect! app))
 
 (defmutation select-faction [{:keys [selected-faction]}]
   (action [{:keys [state]}]
