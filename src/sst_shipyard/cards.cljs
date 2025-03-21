@@ -110,6 +110,56 @@
     :points 5
     :slots [:cockpit :thruster :wing :wing :systems :systems :systems :systems]
     }
+
+   {:faction :forge
+    :ship "RL-55"
+    :type "Assault Drone"
+    :points 2
+    :slots [:wing :systems :systems]
+    }
+   {:faction :forge
+    :ship "DA-63"
+    :type "Turbine Drone"
+    :points 2
+    :slots [:thruster :systems :systems]
+    }
+   {:faction :forge
+    :ship "SR-12"
+    :type "Recon Drone"
+    :points 2
+    :slots [:wing :systems :systems]
+    }
+   {:faction :forge
+    :ship "AV-2"
+    :type "Protector Drone"
+    :points 2
+    :slots [:thruster :systems :systems]
+    }
+
+   {:faction :komplex
+    :ship "K-DIVE"
+    :type "Ambush Drone"
+    :points 2
+    :slots [:wing :systems :systems]
+    }
+   {:faction :komplex
+    :ship "K-SWARM"
+    :type "Strike Drone"
+    :points 2
+    :slots [:wing :systems :systems]
+    }
+   {:faction :komplex
+    :ship "K-HEAT"
+    :type "Ramora Drone"
+    :points 2
+    :slots [:wing :systems :systems]
+    }
+   {:faction :komplex
+    :ship "K-JAM"
+    :type "Disruption Drone"
+    :points 2
+    :slots [:thruster :systems :systems]
+    }
    ]
   )
 
@@ -331,5 +381,85 @@
    {:slot :wing
     :faction :komplex
     :name "vector-wings"}
+
+   {:slot :cockpit
+    :faction :forge
+    :name "gunship-cockpit"}
+   {:slot :thruster
+    :faction :forge
+    :name "da-turbine-thruster"}
+   {:slot :wing
+    :faction :forge
+    :name "rl-55-wings"}
+   {:slot :weapon
+    :faction :forge
+    :name "scar-2-pulse-laser"}
+   {:slot :weapon
+    :faction :forge
+    :name "mk3-plasma-cannon"}
+   {:slot :weapon
+    :faction :forge
+    :name "x1-sniper-laser"}
+   {:slot :weapon
+    :faction :forge
+    :name "m5-metal-storm"}
+   {:slot :fin
+    :faction :forge
+    :name "strafing-fins"}
+   {:slot :fin
+    :faction :forge
+    :name "dual-tailfin"}
+   {:slot :utility
+    :faction :forge
+    :name "targeting-array"}
+   {:slot :utility
+    :faction :forge
+    :name "small-deflector"}
+   {:slot :utility
+    :faction :forge
+    :name "jamming-fin"}
+   {:slot :utility
+    :faction :forge
+    :name "missile-relay"}
+
+   {:slot :cockpit
+    :faction :komplex
+    :name "reaper-cockpit"}
+   {:slot :thruster
+    :faction :komplex
+    :name "thruster-fin"}
+   {:slot :wing
+    :faction :komplex
+    :name "kd1-dual-wings"}
+   {:slot :wing
+    :faction :komplex
+    :name "swarm-wings"}
+   {:slot :weapon
+    :faction :komplex
+    :name "c-8-gauss-cannon"}
+   {:slot :weapon
+    :faction :komplex
+    :name "cdl-shock"}
+   {:slot :fin
+    :faction :komplex
+    :name "armored-tailfin"}
+   {:slot :utility
+    :faction :komplex
+    :name "adaptive-plating"}
+   {:slot :utility
+    :faction :komplex
+    :name "xm-booster-pods"}
+   {:slot :utility
+    :faction :komplex
+    :name "k2-small-deflector"}
+   {:slot :utility
+    :faction :komplex
+    :name "ram-spike"}
+   {:slot :utility
+    :faction :komplex
+    :name "hrk-lockdown"}
+   {:slot :utility
+    :faction :komplex
+    :name "s-8-exact"}
    ]
   )

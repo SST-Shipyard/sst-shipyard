@@ -181,7 +181,8 @@
      {:onClick #(setFlipped (not flipped?))
       :sx (merge {:transition "transform 0.8s"
                   :transformStyle "preserve-3d"
-                  :width "315px" :height "315px"}
+                  :width (if (= 2 (:points props)) "157px" "315px")
+                  :height "315px"}
                  (when flipped? {:transform "rotateY(180deg)"}))}
      (fulcro.dom/img {:style {:position :absolute :backfaceVisibility :hidden} :src (str url-base "-front.png")})
      (fulcro.dom/img {:style {:position :absolute :transform "rotateY(180deg)" :backfaceVisibility :hidden} :src (str url-base "-back.png")}))))
@@ -569,6 +570,10 @@
    "c6-p6-p19-p31-p24-p26-p11"
    "c7-p6-p19-p31-p7-p26-p3"
    "c8-p6-p20-p32-p0-p26-p28"
+   "c18-p74-p75-p84"
+   "c19-p73-p76-p80"
+   "c20-p32-p78-p81"
+   "c21-p73-p26-p83"
    "c9-p35-p50-p68-p60-p41"
    "c10-p35-p47-p68-p45-p60"
    "c11-p36-p48-p67-p39-p66-p61"
@@ -578,6 +583,10 @@
    "c15-p37-p52-p69-p70-p43-p63-p64-p62"
    "c16-p37-p53-p69-p70-p58-p63-p55-p64"
    "c17-p37-p52-p69-p70-p44-p64-p65-p54"
+   "c22-p87-p89-p95"
+   "c23-p88-p90-p91"
+   "c24-p71-p66-p97"
+   "c25-p86-p61-p92"
    ])
 
 (defmutation open-preset-loader [_params]
@@ -750,6 +759,10 @@
 
 ; Changelog
 ; =========
+; 2025-03-21
+; ----------
+; Swarm cards
+;
 ; 2023-08-23
 ; ----------
 ; Squad total points
